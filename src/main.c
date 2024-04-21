@@ -1,16 +1,16 @@
 #include "def.h"
 #include "z0_log.h"
 
-static uint
+static usize
 det_vec_iter(struct vec *vec)
 {
-	uint sts;
+	usize sts;
 
 	static const char *col[] = { COL_GRN, COL_RED };
 	static const char *res[] = { "PASSED", "FAILED" };
 
 	log_inf("found %zu functions", vec->len);
-	for (uint i = 0; i < vec->len; ++i) {
+	for (usize i = 0; i < vec->len; ++i) {
 		struct det_dsc dsc;
 		sts = vec_get(vec, i, &dsc);
 		if (STS_ERR(sts)) {
@@ -24,7 +24,7 @@ det_vec_iter(struct vec *vec)
 			return DET_STS_ERR;
 		}
 
-		uint ret;
+		usize ret;
 		ret = sts == DET_STS_FAILED;
 		log_inf("called " COL_MAG "[%s]" COL_NRM ", status: %s%s" COL_NRM, dsc.name, col[ret], res[ret]);
 	}
@@ -40,7 +40,7 @@ main(void)
 
 	struct det_ctx ctx;
 
-	uint sts;
+	usize sts;
 	sts = vec_new(&ctx.vec_fns_anti_dbg, sizeof (struct det_dsc));
 	if (STS_ERR(sts)) {
 		log_err("failed to create module vector, sts: %zu\n", sts);

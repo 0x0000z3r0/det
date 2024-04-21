@@ -9,7 +9,7 @@
 #define DET_STS_FAILED	STS_NEW(2, STS_LVL_INF)
 #define DET_STS_ERR	STS_NEW(0, STS_LVL_ERR)
 
-typedef uint (*det_fn)(void);
+typedef usize (*det_fn)(void);
 
 struct det_dsc {
 	const char *name;
@@ -21,10 +21,10 @@ struct det_ctx {
 	struct vec vec_fns_anti_vm;
 };
 
-uint
+usize
 det_anti_dbg_init(struct det_ctx*);
 
-uint
+usize
 det_anti_vm_init(struct det_ctx*);
 
 #endif

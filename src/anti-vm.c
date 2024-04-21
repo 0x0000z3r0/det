@@ -3,7 +3,7 @@
 
 #include <cpuid.h>
 
-static uint
+static usize
 anti_vm_chk_cpuid(void)
 {
 	s32 res;
@@ -26,16 +26,16 @@ anti_vm_chk_cpuid(void)
 	return DET_STS_PASSED;
 }
 
-uint
+usize
 det_anti_vm_init(struct det_ctx *ctx)
 {
 	log_inf("initializing the anti virtual machines module");
 
-	uint sts;
+	usize sts;
 
 	struct det_dsc dsc;
 
-	dsc.name = "Check CPUID";
+	dsc.name = "check CPUID";
 	dsc.func = anti_vm_chk_cpuid;
 	sts = vec_add(&ctx->vec_fns_anti_vm, &dsc);
 	if (STS_ERR(sts))
