@@ -1,0 +1,3 @@
+[submodule "libz0"]
+	path = libz0
+	url = git@github.com:0x0000z3r0/libz0.git
