@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
+#include <ucontext.h>
 
 static usize __attribute__((noinline, section("fn_anti_dbg_chk_bp")))
 anti_dbg_chk_bp(void)
@@ -152,7 +153,7 @@ anti_dbg_chk_ptrace(void)
 	s32 sts;
 
 	pid_t pid;
-	pid = vfork();
+	pid = fork();
 	if (pid == -1) {
 		log_err("failed to fork, err: %s", strerror(errno));
 		return DET_STS_ERR;
@@ -181,7 +182,7 @@ anti_dbg_chk_ptrace(void)
 		}
 
 		res = ptrace(PTRACE_DETACH, ppid, NULL, NULL);
-		if (res == -1) {
+		if (res == -1 && errno != ESRCH) {
 			log_err("failed to detach the parent, err: %s", strerror(errno));
 			exit(DET_STS_ERR);
 		}
@@ -206,6 +207,36 @@ anti_dbg_chk_ptrace(void)
 	return DET_STS_PASSED;
 }
 
+static u32 g_dbg = TRUE;
+static void
+anti_dbg_chk_sig_hnd(s32 sig)
+{
+	(void)sig;
+
+	g_dbg = FALSE;
+	signal(SIGTRAP, SIG_DFL);
+}
+
+static usize
+anti_dbg_chk_sig(void)
+{
+	signal(SIGTRAP, anti_dbg_chk_sig_hnd);
+	raise(SIGTRAP);
+
+	if (g_dbg) {
+		return DET_STS_FAILED;
+	}
+
+	return DET_STS_PASSED;
+}
+
+static usize
+anti_dbg_chk_hw_bp(void)
+{
+
+	return DET_STS_PASSED;
+}
+
 usize
 det_anti_dbg_init(struct det_ctx *ctx)
 {
@@ -215,7 +246,7 @@ det_anti_dbg_init(struct det_ctx *ctx)
 
 	struct det_dsc dsc;
 
-	dsc.name = "check breakpoint";
+	dsc.name = "check software breakpoints";
 	dsc.func = anti_dbg_chk_bp;
 	sts = vec_add(&ctx->vec_fns_anti_dbg, &dsc);
 	if (STS_ERR(sts))
@@ -235,6 +266,18 @@ det_anti_dbg_init(struct det_ctx *ctx)
 
 	dsc.name = "check ptrace";
 	dsc.func = anti_dbg_chk_ptrace;
+	sts = vec_add(&ctx->vec_fns_anti_dbg, &dsc);
+	if (STS_ERR(sts))
+		return sts;
+
+	dsc.name = "check signal trap";
+	dsc.func = anti_dbg_chk_sig;
+	sts = vec_add(&ctx->vec_fns_anti_dbg, &dsc);
+	if (STS_ERR(sts))
+		return sts;
+
+	dsc.name = "check hardware breakpoints";
+	dsc.func = anti_dbg_chk_hw_bp;
 	sts = vec_add(&ctx->vec_fns_anti_dbg, &dsc);
 	if (STS_ERR(sts))
 		return sts;
